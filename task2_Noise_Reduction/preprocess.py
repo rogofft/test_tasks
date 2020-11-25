@@ -25,7 +25,7 @@ def load_and_convert(path):
 
 def load_mel(path):
     # load mel-spectrogram
-    mel = np.load(path)
+    mel = np.load(path).T.astype(np.single)
     return mel
 
 def convert_to_mfcc(mel, n_mfcc=128):

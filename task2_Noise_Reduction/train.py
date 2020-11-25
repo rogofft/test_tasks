@@ -31,10 +31,10 @@ val_data_noisy_dir = os.path.join(data_path, val_data_dir, 'noisy')
 
 # Preprocessing data
 print('Start preprocessing data (may take a few minutes)...')
-train_data_clean = list(map(lambda x: preprocess.load_mel_convert_to_mfcc(x), preprocess.get_filelist(train_data_clean_dir)[:1000]))
-train_data_noisy = list(map(lambda x: preprocess.load_mel_convert_to_mfcc(x), preprocess.get_filelist(train_data_noisy_dir)[:1000]))
-val_data_clean = list(map(lambda x: preprocess.load_mel_convert_to_mfcc(x), preprocess.get_filelist(val_data_clean_dir)))
-val_data_noisy = list(map(lambda x: preprocess.load_mel_convert_to_mfcc(x), preprocess.get_filelist(val_data_noisy_dir)))
+train_data_clean = list(map(lambda x: preprocess.load_mel(x), preprocess.get_filelist(train_data_clean_dir)[:10]))
+train_data_noisy = list(map(lambda x: preprocess.load_mel(x), preprocess.get_filelist(train_data_noisy_dir)[:10]))
+val_data_clean = list(map(lambda x: preprocess.load_mel(x), preprocess.get_filelist(val_data_clean_dir)[:50]))
+val_data_noisy = list(map(lambda x: preprocess.load_mel(x), preprocess.get_filelist(val_data_noisy_dir)[:50]))
 
 print(f'Train data: clean - {len(train_data_clean)}, noisy - {len(train_data_noisy)}\n'
       f'Val data: clean - {len(val_data_clean)} , noisy - {len(val_data_noisy)}')
@@ -59,36 +59,37 @@ import seaborn as sns
 
 
 
-net = model.NeuralNetwork(80, 200, 200, 80).to(device)
+net = model.NeuralNetwork(80, 1024, 1024, 80).to(device)
 net.load_state_dict(torch.load(net_path))
-#net.fit(train_dataset, epochs=1, lr=0.0001)
+#net.fit(train_dataset, epochs=2, lr=0.0001)
 #torch.save(net.state_dict(), net_path)
 net.eval()
 
 mse_denoisy = []
 mse_noisy = []
 
-for i in range(20):
+for i in range(len(val_dataset)):
+      print(i)
       x, y = val_dataset[i]
-      #f, axs = plt.subplots(3, 1)
+      f, axs = plt.subplots(3, 1)
 
       y_ = net.predict(x.to(device))
 
-      noisy = librosa.feature.inverse.mfcc_to_mel(x.numpy(), n_mels=128)
-      denoisy = librosa.feature.inverse.mfcc_to_mel(y_.numpy(), n_mels=128)
-      clean = librosa.feature.inverse.mfcc_to_mel(y.numpy(), n_mels=128)
+      noisy = x.numpy()
+      denoisy = y_.numpy()
+      clean = y.numpy()
 
       mse_denoisy.append(np.power(clean - denoisy, 2).mean())
       mse_noisy.append(np.power(clean - noisy, 2).mean())
 
-      '''axs[0].set_title('Noisy')
+      axs[0].set_title('Noisy')
       axs[0].imshow(noisy)
-      axs[1].set_title('Denoisy')
+      axs[1].set_title('Model Predict')
       axs[1].imshow(denoisy)
       axs[2].set_title('Clean')
       axs[2].imshow(clean)
       plt.tight_layout()
-      plt.show()'''
+      plt.show()
 print(np.mean(mse_denoisy))
 print(np.mean(mse_noisy))
 
