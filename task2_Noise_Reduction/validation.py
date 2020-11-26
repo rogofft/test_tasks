@@ -27,8 +27,8 @@ val_data_clean_dir = os.path.join(val_data_path, 'clean')
 val_data_noisy_dir = os.path.join(val_data_path, 'noisy')
 
 # Get files from validation data
-val_data_clean = get_sampled_data(val_data_clean_dir, raw_data=True)
-val_data_noisy = get_sampled_data(val_data_noisy_dir, raw_data=True)
+val_data_clean = get_sampled_data(val_data_clean_dir)
+val_data_noisy = get_sampled_data(val_data_noisy_dir)
 
 # Make validation dataset
 val_dataset = MelDataset(list(zip(val_data_noisy, val_data_clean)), transform=True)
@@ -58,15 +58,15 @@ with torch.no_grad():
     # Validation loop
     for batch_idx, (x, y) in loop:
         # Move data to cuda if possible
-        x, y = x.view(-1, 80).to(device), y.view(-1, 80).to(device)
+        x = x.to(device)
 
         # Predict and calculate MSE
         y_ = net.predict(x)
-        loss = criterion(y_.view(-1, 80), y.cpu())
+        loss = criterion(y_, y)
         val_loss += torch.sum(loss.detach()).item()
 
         # Calculate MSE of noisy data
-        loss = criterion(x, y)
+        loss = criterion(x.cpu(), y)
         noisy_loss += torch.sum(loss.detach()).item()
 
         # Update progress bar

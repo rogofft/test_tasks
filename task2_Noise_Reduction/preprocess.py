@@ -17,12 +17,9 @@ def get_filelist(path) -> list:
     return retlist
 
 
-def get_sampled_data(dirpath, n_loads=None, raw_data=False):
+def get_sampled_data(dirpath, n_loads=None) -> list:
     """ Function loads mel-frequency spectrograms [N, 80],
-        splits into N x [1, 80] samples and concatenate
-        them to one big array
         :n_loads - quantity of files to load from 'dirpath' directory
-        :raw_data - if True returns raw [N, 80] mel-spectrograms
         :return list of samples """
 
     # Load n_loads files, or load all
@@ -41,19 +38,11 @@ def get_sampled_data(dirpath, n_loads=None, raw_data=False):
     str_data_info = os.path.split(os.path.split(dirpath)[0])[1] + '\\' + os.path.split(dirpath)[1]
 
     for num, path in loop:
-        if not raw_data:
-            # Reshape to convert [N, 80] arrays to [N, 1, 80]
-            samples.append(np.load(path).astype(np.single).reshape(-1, 1, 80))
-        else:
-            # Get data 'as is'
-            samples.append(np.load(path).astype(np.single))
+        # Load sample from file
+        samples.append(np.load(path).astype(np.single))
         # Turn progressbar
         loop.set_description(f'Loading {str_data_info}')
-    if not raw_data:
-        # Concat to one big array
-        return np.concatenate(samples)
-    else:
-        return samples
+    return samples
 
 
 def preprocess_to_model(filepath):

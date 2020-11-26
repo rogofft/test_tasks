@@ -61,6 +61,7 @@ class NeuralNetwork(nn.Module):
         self.linear8 = nn.Linear(256, 80)
 
     def forward(self, x):
+        x = x.view(-1, 1, 80)
         x = self.pool1(self.lrelu1(self.bn1(self.conv1(x))))
         x = self.pool2(self.lrelu2(self.bn2(self.conv2(x))))
         x = self.pool3(self.lrelu3(self.bn3(self.conv3(x))))
@@ -72,13 +73,13 @@ class NeuralNetwork(nn.Module):
 
         x = self.lrelu7(self.bn7(self.linear7(x)))
         x = self.linear8(x)
-        return x.view(-1, 1, 80)
+        return x.view(1, -1, 80)
 
     def predict(self, x):
         """ Use this function to reduce noise on data. """
-        x = x.view(-1, 1, 80).to(device)
+        x = x.to(device)
         y_ = self.forward(x)
-        return y_.cpu().detach().view(1, -1, 80)
+        return y_.detach().cpu()
 
     def fit(self, dataset, val_dataset, epochs, lr=0.0001, batch_size=1024, model_save_path='pretrained/model.ptm'):
         """ Function to fit model.
@@ -155,4 +156,3 @@ class NeuralNetwork(nn.Module):
                 torch.save(self.state_dict(), model_save_path)
 
         self.eval()
-        # return

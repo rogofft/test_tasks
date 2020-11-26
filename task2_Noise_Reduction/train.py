@@ -38,6 +38,6 @@ val_dataset = MelDataset(list(zip(val_data_noisy, val_data_clean)), transform=Tr
 net = get_model()
 
 # Training
-net.fit(train_dataset, val_dataset=val_dataset, epochs=40, lr=0.0001, batch_size=2048, model_save_path=net_path)
+net.fit(train_dataset, val_dataset=val_dataset, epochs=40, lr=0.0001, batch_size=1, model_save_path=net_path)
 
 print('Model fitted successfully!')
