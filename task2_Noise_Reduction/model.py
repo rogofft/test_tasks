@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 # Use manual seed to reproduce results
-torch.manual_seed(1)
+#torch.manual_seed(1)
 # Use cuda if it's allowed
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
