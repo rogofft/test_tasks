@@ -1,40 +1,60 @@
 import os
 import numpy as np
-import scipy
-import librosa
+from tqdm import tqdm
+from torch import from_numpy
 
 
-# get lists of paths of files
 def get_filelist(path) -> list:
+    """ Gets list of files from directories which one level belows the 'path' directory.
+        :return list of filepaths """
     retlist = []
+    # Get subdirectories name list
     dirlist = os.listdir(path)
+    # Get list of files from subdirectories
     for directory in dirlist:
         templist = os.listdir(os.path.join(path, directory))
         retlist += list(map(lambda x: os.path.join(path, directory, x), templist))
     return retlist
 
 
-# Preprocess data to dataset
-def load_and_convert(path):
-    # load mel-spectrogram
-    mel = np.load(path)
-    # extract mfcc
-    mfcc = librosa.feature.mfcc(y=None, sr=None, S=mel.T, n_mfcc=40)
-    # use DCT-2 to extract features from mfcc
-    return scipy.fftpack.dct(mfcc, type=2, n=10, norm='ortho').ravel()
+def get_sampled_data(dirpath, n_loads=None, raw_data=False):
+    """ Function loads mel-frequency spectrograms [N, 80],
+        splits into N x [1, 80] samples and concatenate
+        them to one big array
+        :n_loads - quantity of files to load from 'dirpath' directory
+        :raw_data - if True returns raw [N, 80] mel-spectrograms
+        :return list of samples """
 
-def load_mel(path):
-    # load mel-spectrogram
-    mel = np.load(path).T.astype(np.single)
-    return mel
+    # Load n_loads files, or load all
+    if n_loads:
+        files = get_filelist(dirpath)[:n_loads]
+    else:
+        files = get_filelist(dirpath)
+    # List for return
+    samples = []
 
-def convert_to_mfcc(mel, n_mfcc=128):
-    return librosa.feature.mfcc(S=mel.T, n_mfcc=n_mfcc)
+    # Used for progressbar
+    total = len(files)
+    loop = tqdm(enumerate(files), total=total, leave=True)
+
+    # This string just for beauty looking in console
+    str_data_info = os.path.split(os.path.split(dirpath)[0])[1] + '\\' + os.path.split(dirpath)[1]
+
+    for num, path in loop:
+        if not raw_data:
+            # Reshape to convert [N, 80] arrays to [N, 1, 80]
+            samples.append(np.load(path).astype(np.single).reshape(-1, 1, 80))
+        else:
+            # Get data 'as is'
+            samples.append(np.load(path).astype(np.single))
+        # Turn progressbar
+        loop.set_description(f'Loading {str_data_info}')
+    if not raw_data:
+        # Concat to one big array
+        return np.concatenate(samples)
+    else:
+        return samples
 
 
-def load_mel_convert_to_mfcc(path, n_mfcc=128):
-    # load mel-spectrogram
-    mel = np.load(path)
-    # convert to mfcc
-    mfcc = librosa.feature.mfcc(S=mel.T, n_mfcc=n_mfcc)
-    return mfcc
+def preprocess_to_model(filepath):
+    return from_numpy(np.load(filepath).astype(np.single))
